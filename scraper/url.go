@@ -45,6 +45,7 @@ func prefixRoot(parent, v string) string {
 }
 
 func buildLink(parent, link string) string {
+	// Yes this is probably overengineering
 	pipeline := []func(string) string{
 		trimAfterHash,
 		func(v string) string {
