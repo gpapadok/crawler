@@ -3,18 +3,18 @@ package main
 import (
 	"fmt"
 	"web-crawler/broker"
-	"web-crawler/database"
-	"web-crawler/scraper"
+
+	"github.com/joho/godotenv"
 )
 
+// TODO: Maybe move to DB
+var seedURL string = "http://example.com"
+
 func main() {
-	// Create database connection
-	db, err := database.Connect()
+	err := godotenv.Load()
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
-	fmt.Println("Successfully connected to database.")
 
 	// Create broker connection
 	conn, err := broker.Connect()
@@ -33,25 +33,16 @@ func main() {
 	fmt.Println("Successfully created broker channel.")
 
 	// Create broker Queue
-	queueName := "urls"
+	queueName := "urls" // TODO: Move to const
 	q, err := broker.CreateQueue(ch, queueName)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Successfully created broker queue.")
 
-	for {
-		msgs, err := broker.Consume(ch, q)
-		if err != nil {
-			panic(err)
-		}
-
-		for msg := range msgs {
-			fmt.Println("Consumed: ", string(msg.Body))
-			err = scraper.Scrape(string(msg.Body), db, ch, q)
-			if err != nil {
-				panic(err)
-			}
-		}
+	err = broker.Publish(ch, q, seedURL)
+	if err != nil {
+		panic(err)
 	}
+	fmt.Println("Published body", seedURL)
 }

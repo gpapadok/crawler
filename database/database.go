@@ -3,32 +3,27 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "postgres"
-	dbname   = "crawler"
-)
-
-func psqlInfo() (psqlInfo string) {
-	psqlInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	return
+func DBInfo() string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"))
 }
 
-func Connect() (*sql.DB, error) {
-	db, err := sql.Open("postgres", psqlInfo())
+func Connect(buildDbInfo func() string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", buildDbInfo())
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.Ping()
-	if err != nil {
+	if err = db.Ping(); err != nil {
 		return nil, err
 	}
 
@@ -44,37 +39,11 @@ func InsertURL(db *sql.DB, url string, parent string) error {
 	return err
 }
 
-func GetVisited(db *sql.DB) ([]string, error) {
-	query := "select distinct parent from links"
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var link string
-	var links []string
-
-	for rows.Next() {
-		rows.Scan(&link)
-		links = append(links, link)
-	}
-
-	return links, nil
-}
-
 func IsVisited(db *sql.DB, link string) (bool, error) {
-	query := "select $1 in (select url from links)"
-
-	row := db.QueryRow(query, link)
+	query := "select $1 in (select parent from links)"
 
 	var isVisited bool
+	err := db.QueryRow(query, link).Scan(&isVisited)
 
-	err := row.Scan(&isVisited)
-	if err != nil {
-		return false, err
-	}
-
-	return isVisited, nil
+	return isVisited, err
 }

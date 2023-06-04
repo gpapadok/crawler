@@ -2,29 +2,26 @@ package broker
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func Connect() (*amqp.Connection, error) {
-	amqpURL := "amqp://guest:guest@localhost:5672" // TODO: Move to env variable
+	amqpURI := fmt.Sprintf("amqp://%s:%s@%s:%s",
+		os.Getenv("BROKER_USER"),
+		os.Getenv("BROKER_PASSWORD"),
+		os.Getenv("BROKER_HOST"),
+		os.Getenv("BROKER_PORT"),
+	)
 
-	conn, err := amqp.Dial(amqpURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
+	return amqp.Dial(amqpURI)
 }
 
 func CreateChannel(conn *amqp.Connection) (*amqp.Channel, error) {
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-
-	return ch, nil
+	return conn.Channel()
 }
 
 func CreateQueue(ch *amqp.Channel, name string) (*amqp.Queue, error) {
@@ -39,15 +36,14 @@ func CreateQueue(ch *amqp.Channel, name string) (*amqp.Queue, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return &q, nil
+	return &q, err
 }
 
 func Publish(ch *amqp.Channel, q *amqp.Queue, body string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := ch.PublishWithContext(
+	return ch.PublishWithContext(
 		ctx,
 		"",
 		q.Name,
@@ -57,14 +53,13 @@ func Publish(ch *amqp.Channel, q *amqp.Queue, body string) error {
 			ContentType: "text/plain",
 			Body:        []byte(body),
 		})
-	return err
 }
 
 func Consume(ch *amqp.Channel, q *amqp.Queue) (<-chan amqp.Delivery, error) {
 	return ch.Consume(
 		q.Name,
 		"",
-		true,  // autoAck
+		false, // autoAck
 		false, // exclusive
 		false, // noLocal
 		false, // noWait
