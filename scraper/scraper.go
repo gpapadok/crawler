@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"web-crawler/broker"
-	"web-crawler/database"
+	"crawler/broker"
+	"crawler/database"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/net/html"

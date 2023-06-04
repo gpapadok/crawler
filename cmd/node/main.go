@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"web-crawler/broker"
-	"web-crawler/database"
-	"web-crawler/scraper"
+	"crawler/broker"
+	"crawler/database"
+	"crawler/scraper"
 
 	"github.com/joho/godotenv"
 )

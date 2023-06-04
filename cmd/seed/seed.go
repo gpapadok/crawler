@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"web-crawler/broker"
+	"crawler/broker"
 
 	"github.com/joho/godotenv"
 )

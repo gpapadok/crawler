@@ -1,4 +1,4 @@
-module web-crawler
+module crawler
 
 go 1.18
 
