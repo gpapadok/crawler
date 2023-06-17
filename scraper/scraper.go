@@ -28,7 +28,7 @@ func Scrape(url string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) er
 	}
 
 	fmt.Println("Scraping links: ", url)
-	links := visit([]string{}, doc)
+	links := traverseForLinks([]string{}, doc)
 
 	for _, link := range links {
 		link = buildLink(url, link)
@@ -52,7 +52,7 @@ func Scrape(url string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) er
 	return nil
 }
 
-func visit(links []string, node *html.Node) []string {
+func traverseForLinks(links []string, node *html.Node) []string {
 	if node.Type == html.ElementNode && node.Data == "a" {
 		for _, a := range node.Attr {
 			// Filter out links with protocols other than http and #fragment links
@@ -62,7 +62,7 @@ func visit(links []string, node *html.Node) []string {
 		}
 	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		links = visit(links, c)
+		links = traverseForLinks(links, c)
 	}
 	return links
 }
