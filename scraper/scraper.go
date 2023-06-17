@@ -1,11 +1,11 @@
 package scraper
 
 import (
+	"crawler/broker"
+	"crawler/database"
 	"database/sql"
 	"fmt"
 	"net/http"
-	"crawler/broker"
-	"crawler/database"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/net/html"
@@ -30,8 +30,13 @@ func Scrape(url string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) er
 	fmt.Println("Scraping links: ", url)
 	links := traverseForLinks([]string{}, doc)
 
+	err = publishAndStore(links, url, db, channel, queue)
+	return err
+}
+
+func publishAndStore(links []string, parent string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) error {
 	for _, link := range links {
-		link = buildLink(url, link)
+		link = buildLink(parent, link)
 
 		isVisited, err := database.IsVisited(db, link)
 		if err != nil {
@@ -45,7 +50,7 @@ func Scrape(url string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) er
 			return err
 		}
 
-		if err = database.InsertURL(db, link, url); err != nil {
+		if err = database.InsertURL(db, link, parent); err != nil {
 			return err
 		}
 	}
