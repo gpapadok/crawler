@@ -19,7 +19,7 @@ go build cmd/node/main.go
 
 Seed the broker with a URL `./seed`
 
-Then start running nodes with `./main
+Then start running nodes with `./main`
 
 #### dotenv
 
