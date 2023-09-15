@@ -62,11 +62,11 @@ func crawl() {
 
 	for msg := range deliveries {
 		if err = scrape(string(msg.Body)); err != nil {
-			panic(err)
+			fmt.Println(err)
 		}
 
 		if err = msg.Ack(false); err != nil {
-			panic(err)
+			fmt.Println(err)
 		}
 	}
 }
