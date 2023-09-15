@@ -46,11 +46,11 @@ func publishAndStore(links []string, parent string, db *sql.DB, channel *amqp.Ch
 			continue
 		}
 
-		if err = broker.Publish(channel, queue, link); err != nil {
+		if err = database.InsertURL(db, link, parent); err != nil {
 			return err
 		}
 
-		if err = database.InsertURL(db, link, parent); err != nil {
+		if err = broker.Publish(channel, queue, link); err != nil {
 			return err
 		}
 	}
