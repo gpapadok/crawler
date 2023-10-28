@@ -51,9 +51,12 @@ func crawl() {
 	}
 	fmt.Println("Successfully created broker queue.")
 
+	links := make(chan scraper.Link)
 	scrape := func(url string) error {
-		return scraper.Scrape(url, db, ch, q)
+		return scraper.Scrape(url, links)
 	}
+
+	go scraper.StoreAndPublish(links, db, ch, q)
 
 	deliveries, err := broker.Consume(ch, q)
 	if err != nil {

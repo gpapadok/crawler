@@ -11,7 +11,12 @@ import (
 	"golang.org/x/net/html"
 )
 
-func Scrape(url string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) error {
+type Link struct {
+	url string
+	parent string
+}
+
+func Scrape(url string, links chan Link) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -28,46 +33,45 @@ func Scrape(url string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) er
 	}
 
 	fmt.Println("Scraping links: ", url)
-	links := traverseForLinks([]string{}, doc)
+	traverseForLinks(links, doc, url)
 
-	err = publishAndStore(links, url, db, channel, queue)
-	return err
+	return nil
 }
 
-func publishAndStore(links []string, parent string, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) error {
-	for _, link := range links {
-		link = buildLink(parent, link)
+func StoreAndPublish(links chan Link, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) {
+	for link := range links {
+		url := buildLink(link.parent, link.url)
 
-		isVisited, err := database.IsVisited(db, link)
+		isVisited, err := database.IsVisited(db, url)
 		if err != nil {
-			return err
+			fmt.Println(err)
+			continue
 		}
 		if isVisited {
 			continue
 		}
 
-		if err = database.InsertURL(db, link, parent); err != nil {
-			return err
+		if err = database.InsertURL(db, url, link.parent); err != nil {
+			fmt.Println(err)
+			continue
 		}
-
-		if err = broker.Publish(channel, queue, link); err != nil {
-			return err
+		if err = broker.Publish(channel, queue, url); err != nil {
+			fmt.Println(err)
+			continue
 		}
 	}
-	return nil
 }
 
-func traverseForLinks(links []string, node *html.Node) []string {
+func traverseForLinks(links chan Link, node *html.Node, parent string) {
 	if node.Type == html.ElementNode && node.Data == "a" {
 		for _, a := range node.Attr {
 			// Filter out links with protocols other than http and #fragment links
 			if a.Key == "href" && validLink(a.Val) {
-				links = append(links, a.Val)
+				links <- Link{a.Val, parent}
 			}
 		}
 	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		links = traverseForLinks(links, c)
+		traverseForLinks(links, c, parent)
 	}
-	return links
 }
