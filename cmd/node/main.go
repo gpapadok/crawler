@@ -4,7 +4,7 @@ import (
 	"crawler/broker"
 	"crawler/database"
 	"crawler/scraper"
-	"fmt"
+	"log"
 
 	"github.com/joho/godotenv"
 )
@@ -25,7 +25,7 @@ func crawl() {
 		panic(err)
 	}
 	defer db.Close()
-	fmt.Println("Successfully connected to database.")
+	log.Println("Successfully connected to database.")
 
 	// Create broker connection
 	conn, err := broker.Connect()
@@ -33,7 +33,7 @@ func crawl() {
 		panic(err)
 	}
 	defer conn.Close()
-	fmt.Println("Successfully connected to broker.")
+	log.Println("Successfully connected to broker.")
 
 	// Create broker channel
 	ch, err := broker.CreateChannel(conn)
@@ -41,7 +41,7 @@ func crawl() {
 		panic(err)
 	}
 	defer ch.Close()
-	fmt.Println("Successfully created broker channel.")
+	log.Println("Successfully created broker channel.")
 
 	// Create broker Queue
 	queueName := "urls"
@@ -49,7 +49,7 @@ func crawl() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Successfully created broker queue.")
+	log.Println("Successfully created broker queue.")
 
 	links := make(chan scraper.Link)
 	scrape := func(url string) error {
@@ -65,11 +65,12 @@ func crawl() {
 
 	for msg := range deliveries {
 		if err = scrape(string(msg.Body)); err != nil {
-			fmt.Println(err)
+			log.Println(err)
+			continue
 		}
 
 		if err = msg.Ack(false); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 }

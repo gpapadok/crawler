@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"crawler/broker"
 
 	"github.com/joho/godotenv"
@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 	defer conn.Close()
-	fmt.Println("Successfully connected to broker.")
+	log.Println("Successfully connected to broker.")
 
 	// Create broker channel
 	ch, err := broker.CreateChannel(conn)
@@ -30,7 +30,7 @@ func main() {
 		panic(err)
 	}
 	defer ch.Close()
-	fmt.Println("Successfully created broker channel.")
+	log.Println("Successfully created broker channel.")
 
 	// Create broker Queue
 	queueName := "urls" // TODO: Move to const
@@ -38,11 +38,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Successfully created broker queue.")
+	log.Println("Successfully created broker queue.")
 
 	err = broker.Publish(ch, q, seedURL)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Published body", seedURL)
+	log.Println("Published body", seedURL)
 }

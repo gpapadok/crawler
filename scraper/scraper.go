@@ -4,7 +4,7 @@ import (
 	"crawler/broker"
 	"crawler/database"
 	"database/sql"
-	"fmt"
+	"log"
 	"net/http"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -38,7 +38,7 @@ func Scrape(url string, links chan Link) error {
 		return err
 	}
 
-	fmt.Println("Scraping links: ", url)
+	log.Println("Scraping links: ", url)
 	traverseForLinks(links, doc, url)
 
 	return nil
@@ -50,7 +50,7 @@ func StoreAndPublish(links chan Link, conns Connections) {
 
 		isVisited, err := database.IsVisited(conns.Db, url)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 		if isVisited {
@@ -58,11 +58,11 @@ func StoreAndPublish(links chan Link, conns Connections) {
 		}
 
 		if err = database.InsertURL(conns.Db, url, link.parent); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 		if err = broker.Publish(conns.Channel, conns.Queue, url); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 	}
