@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"crawler/broker"
 	"crawler/database"
 	"crawler/scraper"
+	"fmt"
 
 	"github.com/joho/godotenv"
 )
@@ -56,7 +56,7 @@ func crawl() {
 		return scraper.Scrape(url, links)
 	}
 
-	go scraper.StoreAndPublish(links, db, ch, q)
+	go scraper.StoreAndPublish(links, scraper.Connections{db, ch, q})
 
 	deliveries, err := broker.Consume(ch, q)
 	if err != nil {

@@ -11,8 +11,14 @@ import (
 	"golang.org/x/net/html"
 )
 
+type Connections struct {
+	Db      *sql.DB
+	Channel *amqp.Channel
+	Queue   *amqp.Queue
+}
+
 type Link struct {
-	url string
+	url    string
 	parent string
 }
 
@@ -38,11 +44,11 @@ func Scrape(url string, links chan Link) error {
 	return nil
 }
 
-func StoreAndPublish(links chan Link, db *sql.DB, channel *amqp.Channel, queue *amqp.Queue) {
+func StoreAndPublish(links chan Link, conns Connections) {
 	for link := range links {
 		url := buildLink(link.parent, link.url)
 
-		isVisited, err := database.IsVisited(db, url)
+		isVisited, err := database.IsVisited(conns.Db, url)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -51,11 +57,11 @@ func StoreAndPublish(links chan Link, db *sql.DB, channel *amqp.Channel, queue *
 			continue
 		}
 
-		if err = database.InsertURL(db, url, link.parent); err != nil {
+		if err = database.InsertURL(conns.Db, url, link.parent); err != nil {
 			fmt.Println(err)
 			continue
 		}
-		if err = broker.Publish(channel, queue, url); err != nil {
+		if err = broker.Publish(conns.Channel, conns.Queue, url); err != nil {
 			fmt.Println(err)
 			continue
 		}
