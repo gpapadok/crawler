@@ -22,7 +22,7 @@ type Link struct {
 	parent string
 }
 
-func Scrape(url string, links chan Link) error {
+func Scrape(url string, links chan<- Link) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -44,11 +44,18 @@ func Scrape(url string, links chan Link) error {
 	return nil
 }
 
-func StoreAndPublish(links chan Link, conns Connections) {
+func linksBuilder(links <-chan Link, builtLinks chan<- Link) {
 	for link := range links {
-		url := buildLink(link.parent, link.url)
+		builtLinks <- Link{buildLink(link.parent, link.url), link.parent}
+	}
+}
 
-		isVisited, err := database.IsVisited(conns.Db, url)
+func StoreAndPublish(links <-chan Link, conns Connections) {
+	builtLinks := make(chan Link)
+	go linksBuilder(links, builtLinks)
+
+	for link := range builtLinks {
+		isVisited, err := database.IsVisited(conns.Db, link.url)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -57,21 +64,20 @@ func StoreAndPublish(links chan Link, conns Connections) {
 			continue
 		}
 
-		if err = database.InsertURL(conns.Db, url, link.parent); err != nil {
+		if err = database.InsertURL(conns.Db, link.url, link.parent); err != nil {
 			log.Println(err)
 			continue
 		}
-		if err = broker.Publish(conns.Channel, conns.Queue, url); err != nil {
+		if err = broker.Publish(conns.Channel, conns.Queue, link.url); err != nil {
 			log.Println(err)
-			continue
 		}
 	}
 }
 
-func traverseForLinks(links chan Link, node *html.Node, parent string) {
+func traverseForLinks(links chan<- Link, node *html.Node, parent string) {
 	if node.Type == html.ElementNode && node.Data == "a" {
 		for _, a := range node.Attr {
-			// Filter out links with protocols other than http and #fragment links
+			// Filter out non http and #fragment links
 			if a.Key == "href" && validLink(a.Val) {
 				links <- Link{a.Val, parent}
 			}
