@@ -15,7 +15,7 @@ docker ps --filter name=$db_container -q | xargs -I {} docker stop {}
 docker run --rm -d \
        -p 5432:5432 \
        -e POSTGRES_PASSWORD=$DB_PASSWORD \
-       -v $ROOT_DIR/docker/pgdata:/var/lib/postgresql/data \
+       -v $(dirname $(cd $ROOT_DIR; pwd))/docker/pgdata:/var/lib/postgresql/data \
        --name $db_container postgres
 
 # Wait for postgres container
