@@ -19,7 +19,7 @@ func testDBInfo() string {
 }
 
 func connectTest() (*sql.DB, error) {
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	if err != nil {
 		return nil, err
 	}
