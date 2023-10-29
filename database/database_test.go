@@ -110,3 +110,38 @@ func TestIsVisited(t *testing.T) {
 
 	clearTestDB(db)
 }
+
+func TestGetUnscraped(t *testing.T) {
+	db, err := connectTest()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	links := []struct {
+		parent string
+		url    string
+	}{
+		{"http://example.com", "http://example.com/route"},
+		{"http://example.com", "http://example.com/hello"},
+		{"http://example.com", "http://example.com/alekos"},
+		{"http://example.com/alekos", "http://example.com/alekos/index.html"},
+	}
+	nChildren := 3
+
+	for _, link := range links {
+		if err = InsertURL(db, link.url, link.parent); err != nil {
+			panic(err)
+		}
+	}
+
+	urls, err := GetUnscraped(db)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(urls) != nChildren {
+		t.Errorf(`# unscraped = %d, want %d`, len(urls), nChildren)
+	}
+	clearTestDB(db)
+}

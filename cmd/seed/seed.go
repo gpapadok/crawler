@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
 	"crawler/broker"
+	"crawler/database"
+	"log"
 
 	"github.com/joho/godotenv"
 )
@@ -36,13 +37,42 @@ func main() {
 	queueName := "urls" // TODO: Move to const
 	q, err := broker.CreateQueue(ch, queueName)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+	} else {
+		log.Println("Successfully created broker queue.")
 	}
-	log.Println("Successfully created broker queue.")
 
-	err = broker.Publish(ch, q, seedURL)
+	db, err := database.Connect(database.DBInfo)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+
+		err = broker.Publish(ch, q, seedURL)
+		if err != nil {
+			panic(err)
+		}
+		log.Println("Published body", seedURL)
+		return
 	}
-	log.Println("Published body", seedURL)
+
+	urls, err := database.GetUnscraped(db)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if err != nil || len(urls) == 0 {
+		err = broker.Publish(ch, q, seedURL)
+		if err != nil {
+			panic(err)
+		}
+		log.Println("Published body", seedURL)
+		return
+	}
+
+	for _, url := range urls {
+		err = broker.Publish(ch, q, url)
+		if err != nil {
+			panic(err)
+		}
+	}
+	log.Println("Published unscraped urls from database.")
 }

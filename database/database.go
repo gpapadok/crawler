@@ -47,3 +47,25 @@ func IsVisited(db *sql.DB, link string) (bool, error) {
 
 	return isVisited, err
 }
+
+func GetUnscraped(db *sql.DB) ([]string, error) {
+	query := "select url from links where url not in (select parent from links)"
+
+	var urls []string
+	var url string
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&url)
+		if err != nil {
+			panic(err)
+		}
+		urls = append(urls, url)
+	}
+
+	return urls, err
+}
