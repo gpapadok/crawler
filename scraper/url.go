@@ -10,9 +10,10 @@ func rootDomain(url string) string {
 }
 
 func urlDir(url string) string {
-	splitURL := strings.Split(strings.TrimSuffix(url, "/"), "/")
+	trimmed := strings.TrimSuffix(url, "/")
+	splitURL := strings.Split(trimmed, "/")
 	if len(splitURL) <= 3 {
-		return url
+		return trimmed
 	}
 	dir := strings.Join(splitURL[:len(splitURL)-1], "/")
 	return dir

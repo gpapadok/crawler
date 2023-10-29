@@ -24,6 +24,22 @@ func TestRootDomain(t *testing.T) {
 	}
 }
 
+func TestUrlDir(t *testing.T) {
+	var tests = []struct {
+		input string
+		want string
+	}{
+		{"http://example.com/something", "http://example.com"},
+		{"http://example.com/", "http://example.com"},
+		{"http://example.com/something/else/", "http://example.com/something"},
+	}
+	for _, test := range tests {
+		if got := urlDir(test.input); got != test.want {
+			t.Errorf(`urlDir(%q) = %q, want %q`, test.input, got, test.want)
+		}
+	}
+}
+
 func TestTrimAfterHash(t *testing.T) {
 	var tests = []struct {
 		input string
@@ -53,10 +69,10 @@ func TestPrefixRoot(t *testing.T) {
 		{"http://example.com/about/", "/efg", "http://example.com/efg"},
 		{"http://example.com/about", "/efg", "http://example.com/efg"},
 		{"http://example.com/", "http://domain.org", "http://domain.org"},
-		{"http://example.com/something/", "abc.txt", "http://example.com/something/abc.txt"},
+		{"http://example.com/something/", "abc.txt", "http://example.com/abc.txt"},
 		{"http://example.com/something", "abc.txt", "http://example.com/abc.txt"},
-		{"http://example.com/", "about/", "http://example.com/about"},
-		{"http://example.com", "about/", "http://example.com/about"},
+		{"http://example.com/", "about/", "http://example.com/about/"},
+		{"http://example.com", "about/", "http://example.com/about/"},
 	}
 	for _, test := range tests {
 		if got := prefixRoot(test.parent, test.v); got != test.want {
