@@ -43,8 +43,11 @@ func Scrape(url string, links chan<- Link) error {
 	}
 
 	workers <- struct{}{}
-	log.Println("Scraping links: ", url)
-	traverseForLinks(links, doc, url)
+	go func() {
+		defer func() { activeWorkers--; <-workers }()
+		log.Println("Scraping links: ", url)
+		traverseForLinks(links, doc, url)
+	}()
 
 	return nil
 }
@@ -80,8 +83,6 @@ func StoreAndPublish(links <-chan Link, conns Connections) {
 }
 
 func traverseForLinks(links chan<- Link, node *html.Node, parent string) {
-	defer func() { <-workers }()
-
 	if node.Type == html.ElementNode && node.Data == "a" {
 		for _, a := range node.Attr {
 			// Filter out non http and #fragment links
