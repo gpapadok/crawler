@@ -7,10 +7,7 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
-
-const N_WORKERS = 4
 
 func main() {
 	err := godotenv.Load()
@@ -66,22 +63,14 @@ func crawl() {
 		panic(err)
 	}
 
-	sema := make(chan struct{}, N_WORKERS)
-
 	for msg := range deliveries {
-		sema <- struct{}{}
-		go handleMsg(scrape, msg, sema)
-	}
-}
+		if err = scrape(string(msg.Body)); err != nil {
+			log.Println(err)
+			continue
+		}
 
-func handleMsg(scrape func(string) error, msg amqp.Delivery, sema <-chan struct{}) {
-	defer func() { <-sema }()
-	if err := scrape(string(msg.Body)); err != nil {
-		log.Println(err)
-		return
-	}
-
-	if err := msg.Ack(false); err != nil {
-		log.Println(err)
+		if err = msg.Ack(false); err != nil {
+			log.Println(err)
+		}
 	}
 }
