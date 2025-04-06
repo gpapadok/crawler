@@ -43,7 +43,9 @@ func Scrape(url string, links chan<- Link) error {
 	}
 
 	workers <- struct{}{}
+    activeWorkers := 0
 	go func() {
+        activeWorkers++
 		defer func() { activeWorkers--; <-workers }()
 		log.Println("Scraping links: ", url)
 		traverseForLinks(links, doc, url)
