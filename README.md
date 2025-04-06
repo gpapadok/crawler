@@ -13,8 +13,8 @@ Initialze PostgreSQL and Rabbitmq containers by running `start_containers.sh`
 
 Build commands:
 ```
-go build cmd/seed/seed.go
-go build cmd/node/node.go
+go build cmd/seed/main.go
+go build cmd/node/main.go
 ```
 
 Seed the broker with a URL `./seed`

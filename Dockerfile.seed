@@ -3,6 +3,6 @@ FROM golang:1.24
 WORKDIR /go/src
 
 COPY . .
-RUN go build -o /go/bin/seed cmd/seed/seed.go
+RUN go build -o /go/bin/seed cmd/seed/main.go
 
 CMD ["/go/bin/seed"]
